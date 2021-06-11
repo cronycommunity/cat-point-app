@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/catpoint-parent.iml" filepath="$PROJECT_DIR$/catpoint-parent.iml" />
+      <module fileurl="file://$PROJECT_DIR$/imageservice/imageservice.iml" filepath="$PROJECT_DIR$/imageservice/imageservice.iml" />
+      <module fileurl="file://$PROJECT_DIR$/securityservice/securityservice.iml" filepath="$PROJECT_DIR$/securityservice/securityservice.iml" />
     </modules>
   </component>
 </project>
