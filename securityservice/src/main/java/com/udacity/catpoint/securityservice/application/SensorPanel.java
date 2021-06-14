@@ -1,6 +1,6 @@
 package com.udacity.catpoint.securityservice.application;
 
-import com.udacity.catpoint.imageservice.service.StyleService;
+import com.udacity.catpoint.securityservice.service.StyleService;
 import com.udacity.catpoint.securityservice.data.Sensor;
 import com.udacity.catpoint.securityservice.data.SensorType;
 import com.udacity.catpoint.securityservice.service.SecurityService;

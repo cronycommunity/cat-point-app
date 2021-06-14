@@ -1,16 +1,14 @@
 package com.udacity.catpoint.securityservice.service;
 
 import com.udacity.catpoint.imageservice.service.ImageService;
+import com.udacity.catpoint.securityservice.application.StatusListener;
 import com.udacity.catpoint.securityservice.data.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.*;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
@@ -40,6 +38,9 @@ public class SecurityServiceTest {
 
     @Mock
     ImageService imageService;
+
+    @Mock
+    private StatusListener statusListener;
 
     private
     SecurityService securityService;
@@ -171,12 +172,8 @@ public class SecurityServiceTest {
     @ParameterizedTest
     @EnumSource(value = ArmingStatus.class, names = {"ARMED_AWAY", "ARMED_HOME"})
     void resetAllSensors_IfTheSystemIsArmed(ArmingStatus armingStatus) {
-        Set<Sensor> sensors = getSensors(true, 4);
-        when(securityRepository.getSensors()).thenReturn(sensors);
-        securityService.setArmingStatus(armingStatus);
-        List<Executable> executables = new ArrayList<>();
-        sensors.forEach(it -> executables.add(() -> assertEquals(it.getActive(), false)));
-        assertAll(executables);
+        securityService.setArmingStatus(ArmingStatus.ARMED_HOME);
+        assertTrue(securityService.getSensors().stream().allMatch(sensor -> Boolean.FALSE.equals(sensor.getActive())));
     }
 
     //11
@@ -188,6 +185,57 @@ public class SecurityServiceTest {
         ArgumentCaptor<AlarmStatus> captor = ArgumentCaptor.forClass(AlarmStatus.class);
         verify(securityRepository, atMostOnce()).setAlarmStatus(captor.capture());
         assertEquals(captor.getValue(), AlarmStatus.ALARM);
+    }
+
+    @Test
+    public void updateSensorWhenArmed() {
+        ArmingStatus armingStatus = ArmingStatus.ARMED_HOME;
+        Sensor sensor = new Sensor("test", SensorType.DOOR);
+        sensor.setActive(true);
+        Mockito.when(securityRepository.getSensors())
+                .thenReturn(Collections.singleton(sensor));
+        securityService.setArmingStatus(armingStatus);
+        Mockito.verify(securityRepository, Mockito.times(1)).updateSensor(any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(ArmingStatus.class)
+    public void setArmingStatusMethod(ArmingStatus status) {
+        securityService.setArmingStatus(status);
+    }
+
+    @Test
+    public void testAddAndRemoveStatusListener() {
+        securityService.addStatusListener(statusListener);
+        securityService.removeStatusListener(statusListener);
+    }
+
+    @Test
+    public void addAndRemoveSensor() {
+        Sensor sensor = new Sensor("test", SensorType.DOOR);
+        securityService.addSensor(sensor);
+        assertNotNull(securityService.getSensors());
+        securityService.removeSensor(sensor);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"NO_ALARM,DOOR,true", "NO_ALARM,DOOR,false", "PENDING_ALARM,DOOR,true", "PENDING_ALARM,DOOR,false",
+            "PENDING_ALARM,WINDOW,true", "PENDING_ALARM,WINDOW,false"})
+    public void changeSensorActivationStatusWithAllAlarms(AlarmStatus alarmStatus, SensorType sensorType,
+                                                          Boolean active) {
+        Mockito.when(securityRepository.getAlarmStatus())
+                .thenReturn(AlarmStatus.PENDING_ALARM);
+        Sensor sensor = new Sensor("test", sensorType);
+        sensor.setActive(true);
+        securityService.changeSensorActivationStatus(sensor, active);
+        sensor.setActive(false);
+        securityService.changeSensorActivationStatus(sensor, active);
+        Mockito.when(securityRepository.getArmingStatus()).thenReturn(ArmingStatus.DISARMED);
+        sensor = new Sensor("test", sensorType);
+        sensor.setActive(true);
+        securityService.changeSensorActivationStatus(sensor, active);
+        sensor.setActive(false);
+        securityService.changeSensorActivationStatus(sensor, active);
     }
 
 }
