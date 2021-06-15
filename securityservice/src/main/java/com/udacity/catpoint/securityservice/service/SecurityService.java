@@ -124,8 +124,8 @@ public class SecurityService {
         if (securityRepository.getArmingStatus() == ArmingStatus.DISARMED) {
             return;
         }
-        switch (securityRepository.getAlarmStatus()) {
-            case PENDING_ALARM -> setAlarmStatus(AlarmStatus.NO_ALARM);
+        if (securityRepository.getAlarmStatus() == AlarmStatus.PENDING_ALARM) {
+            setAlarmStatus(AlarmStatus.NO_ALARM);
         }
     }
 
